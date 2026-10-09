@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#180b23">
+  <meta name="description" content="一份为你准备的生日惊喜">
+  <title>给亲爱的你 · 生日快乐</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23ef5d8f'/%3E%3Cpath d='M32 51S10 39 10 23c0-12 15-15 22-4 7-11 22-8 22 4 0 16-22 28-22 28Z' fill='%23fff4ed'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --ink: #fff9f5;
+      --muted: #d9c6da;
+      --rose: #ff6d9e;
+      --rose-deep: #c93770;
+      --gold: #ffd88a;
+      --night: #100817;
+      --night-2: #24102d;
+      --glass: rgba(255, 255, 255, .085);
+      --line: rgba(255, 255, 255, .15);
+      --shadow: 0 24px 70px rgba(0, 0, 0, .28);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 18% 16%, rgba(201, 55, 112, .29), transparent 31rem),
+        radial-gradient(circle at 85% 30%, rgba(107, 76, 178, .21), transparent 28rem),
+        linear-gradient(155deg, var(--night), var(--night-2) 56%, #150b1d);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .42;
+      background-image:
+        radial-gradient(circle, #fff 0 1px, transparent 1.2px),
+        radial-gradient(circle, #ffd7e4 0 1px, transparent 1.2px);
+      background-position: 0 0, 37px 61px;
+      background-size: 103px 103px, 137px 137px;
+      mask-image: linear-gradient(to bottom, #000, transparent 78%);
+    }
+
+    button { font: inherit; }
+    button:focus-visible { outline: 3px solid var(--gold); outline-offset: 4px; }
+
+    .sound-toggle {
+      position: fixed;
+      z-index: 30;
+      top: max(16px, env(safe-area-inset-top));
+      right: 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--ink);
+      background: rgba(20, 10, 28, .72);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.22);
+      cursor: pointer;
+    }
+    .sound-toggle .pulse { color: var(--gold); }
+
+    #fxCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    .heart-rain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 4;
+      overflow: hidden;
+    }
+    .falling-heart {
+      position: absolute;
+      top: -10vh;
+      color: rgba(255, 116, 159, .72);
+      text-shadow: 0 0 14px rgba(255, 109, 158, .42);
+      animation: heartFall linear forwards;
+    }
+    @keyframes heartFall {
+      to { transform: translate3d(var(--drift), 115vh, 0) rotate(420deg); opacity: .08; }
+    }
+
+    .hero {
+      position: relative;
+      z-index: 2;
+      min-height: 100svh;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      padding: 92px 20px 56px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--gold);
+      font-size: .84rem;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+    }
+    h1, h2 { font-family: Georgia, "Songti SC", "STSong", serif; }
+    h1 {
+      margin: 0;
+      max-width: 820px;
+      font-size: clamp(2.7rem, 9vw, 6.6rem);
+      line-height: .98;
+      font-weight: 500;
+      letter-spacing: -.045em;
+    }
+    .hero-copy {
+      max-width: 33rem;
+      margin: 20px auto 30px;
+      color: var(--muted);
+      font-size: clamp(1rem, 2.8vw, 1.18rem);
+      line-height: 1.8;
+    }
+
+    .gift-stage {
+      position: relative;
+      width: 260px;
+      height: 260px;
+      display: grid;
+      place-items: end center;
+      perspective: 900px;
+    }
+    .glow {
+      position: absolute;
+      left: 50%;
+      bottom: 4px;
+      width: 230px;
+      height: 55px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: rgba(255, 109, 158, .28);
+      filter: blur(18px);
+      transition: .8s ease;
+    }
+    .gift {
+      --box: #ef5d8f;
+      position: relative;
+      width: 174px;
+      height: 142px;
+      margin-bottom: 22px;
+      border: 0;
+      border-radius: 8px 8px 20px 20px;
+      color: white;
+      background:
+        linear-gradient(90deg, transparent 0 39%, #ffe4aa 39% 61%, transparent 61%),
+        linear-gradient(135deg, #ff7da8, #d33d75);
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transform-style: preserve-3d;
+      transition: transform .25s ease;
+    }
+    .gift:hover { transform: translateY(-6px) rotate(-1deg); }
+    .gift:active { transform: scale(.97); }
+    .gift::before {
+      content: "";
+      position: absolute;
+      z-index: 2;
+      left: -9px;
+      right: -9px;
+      top: -30px;
+      height: 38px;
+      border-radius: 10px;
+      background:
+        linear-gradient(90deg, transparent 0 40%, #fff0bd 40% 60%, transparent 60%),
+        linear-gradient(135deg, #ff8eb5, #df4a7f);
+      box-shadow: 0 12px 18px rgba(65, 10, 39, .25);
+      transform-origin: 18% 100%;
+      transition: 1s cubic-bezier(.2,.8,.2,1);
+    }
+    .gift::after {
+      content: "";
+      position: absolute;
+      z-index: 3;
+      top: -80px;
+      left: 50%;
+      width: 70px;
+      height: 55px;
+      border: 12px solid #ffe4aa;
+      border-radius: 50% 50% 12% 50%;
+      transform: translateX(-95%) rotate(30deg);
+      box-shadow: 45px -28px 0 -12px transparent;
+      transition: .9s cubic-bezier(.2,.8,.2,1);
+    }
+    .gift .bow-right {
+      position: absolute;
+      z-index: 4;
+      top: -78px;
+      left: 50%;
+      width: 70px;
+      height: 55px;
+      border: 12px solid #ffe4aa;
+      border-radius: 50% 50% 50% 12%;
+      transform: translateX(-4%) rotate(-30deg);
+      transition: .9s cubic-bezier(.2,.8,.2,1);
+    }
+    .gift .gift-label {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: grid;
+      place-items: center;
+      padding-top: 26px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-shadow: 0 2px 5px rgba(90, 13, 48, .45);
+    }
+    .gift.open { animation: giftPop .62s both; }
+    .gift.open::before { transform: translate(-60px, -92px) rotate(-32deg); opacity: 0; }
+    .gift.open::after, .gift.open .bow-right { transform: translate(-45%, -70px) rotate(25deg) scale(.55); opacity: 0; }
+    @keyframes giftPop { 40% { transform: scale(.92); } 100% { transform: scale(1.06); opacity: 0; } }
+    .tap-note { margin: 2px 0 0; color: #d8c5da; font-size: .92rem; }
+
+    .reveal-card {
+      position: absolute;
+      inset: 18px 0 auto;
+      margin: auto;
+      width: min(92vw, 360px);
+      padding: 24px 24px 22px;
+      border: 1px solid rgba(255, 235, 198, .32);
+      border-radius: 26px;
+      background: linear-gradient(145deg, rgba(255,255,255,.15), rgba(255,255,255,.06));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      opacity: 0;
+      transform: translateY(70px) scale(.82) rotateX(14deg);
+      pointer-events: none;
+    }
+    .reveal-card.show { animation: cardReveal .9s .35s cubic-bezier(.16,.8,.25,1) forwards; }
+    @keyframes cardReveal { to { opacity: 1; transform: translateY(0) scale(1) rotateX(0); pointer-events: auto; } }
+    .reveal-card .tiny { color: var(--gold); font-size: .78rem; letter-spacing: .18em; }
+    .reveal-card h2 { margin: 10px 0 8px; font-size: 1.8rem; font-weight: 500; }
+    .reveal-card p { margin: 0; color: var(--muted); line-height: 1.7; }
+
+    .primary, .secondary {
+      min-height: 48px;
+      border-radius: 999px;
+      padding: 0 22px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .22s ease;
+    }
+    .primary {
+      border: 0;
+      color: #3f1127;
+      background: linear-gradient(135deg, #ffe9b6, #ffc862);
+      box-shadow: 0 12px 32px rgba(255, 198, 90, .22);
+    }
+    .secondary { color: var(--ink); border: 1px solid var(--line); background: rgba(255,255,255,.07); }
+    .primary:hover, .secondary:hover { transform: translateY(-2px); }
+    .reveal-card .primary { margin-top: 18px; }
+
+    main { position: relative; z-index: 3; }
+    .section {
+      width: min(1080px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 100px 0;
+    }
+    .section-head { max-width: 620px; margin-bottom: 38px; }
+    .kicker { margin: 0 0 10px; color: var(--rose); font-weight: 700; letter-spacing: .14em; font-size: .82rem; }
+    .section h2 { margin: 0; font-size: clamp(2.1rem, 6vw, 4.2rem); line-height: 1.08; font-weight: 500; }
+    .section-desc { color: var(--muted); line-height: 1.8; font-size: 1.02rem; }
+
+    .cake-panel {
+      display: grid;
+      grid-template-columns: minmax(260px, .86fr) 1.14fr;
+      gap: 50px;
+      align-items: center;
+      padding: clamp(26px, 5vw, 58px);
+      border: 1px solid var(--line);
+      border-radius: 34px;
+      background: linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.035));
+      box-shadow: var(--shadow);
+    }
+    .cake-wrap { min-height: 310px; display: grid; place-items: center; }
+    .cake {
+      position: relative;
+      width: 260px;
+      height: 235px;
+      filter: drop-shadow(0 22px 24px rgba(0,0,0,.24));
+    }
+    .cake-base {
+      position: absolute;
+      left: 15px;
+      right: 15px;
+      bottom: 14px;
+      height: 125px;
+      border-radius: 18px 18px 42px 42px;
+      background:
+        radial-gradient(circle at 20px 26px, #ff9cbd 0 7px, transparent 7.5px) 0 0/42px 42px,
+        linear-gradient(#ffcfdd, #ef82a7);
+      border: 4px solid #ffdbe7;
+    }
+    .cake-base::before {
+      content: "";
+      position: absolute;
+      top: -18px;
+      left: -4px;
+      right: -4px;
+      height: 46px;
+      border-radius: 50%;
+      background: linear-gradient(#fff8ef, #ffe6d7);
+      border: 4px solid #ffdbe7;
+    }
+    .cake-base::after {
+      content: "生日快乐";
+      position: absolute;
+      inset: 42px 0 auto;
+      text-align: center;
+      color: #8f2751;
+      font-family: Georgia, "Songti SC", serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+    .candles { position: absolute; inset: 30px 0 auto; display: flex; justify-content: center; gap: 26px; }
+    .candle {
+      position: relative;
+      width: 13px;
+      height: 76px;
+      border-radius: 5px;
+      background: repeating-linear-gradient(-45deg, #fff0b9 0 8px, #ef5d8f 8px 16px);
+      box-shadow: inset -3px 0 rgba(0,0,0,.08);
+    }
+    .flame {
+      position: absolute;
+      left: 50%;
+      top: -32px;
+      width: 19px;
+      height: 30px;
+      transform: translateX(-50%);
+      border-radius: 70% 30% 64% 36%;
+      background: linear-gradient(#fff6b8 8%, #ffc548 48%, #ff7b3d 86%);
+      box-shadow: 0 0 15px #ffb642, 0 0 28px rgba(255, 110, 72, .65);
+      animation: flicker .58s ease-in-out infinite alternate;
+      transform-origin: center bottom;
+    }
+    @keyframes flicker { to { transform: translateX(-50%) rotate(6deg) scale(.92, 1.08); } }
+    .cake.blown .flame { animation: extinguish .42s forwards; }
+    @keyframes extinguish { to { transform: translate(-50%, -14px) scale(.1); opacity: 0; } }
+    .smoke { opacity: 0; position: absolute; top: -35px; left: 50%; width: 4px; height: 32px; border-radius: 50%; background: rgba(230, 222, 235, .7); filter: blur(3px); }
+    .cake.blown .smoke { animation: smoke 1.8s .25s ease-out; }
+    @keyframes smoke { 0% { opacity: 0; transform: translateX(-50%); } 25% { opacity: .6; } 100% { opacity: 0; transform: translate(10px, -70px) scale(2); } }
+    .wish-box h3 { font-family: Georgia, "Songti SC", serif; font-size: 1.72rem; margin: 0 0 10px; }
+    .wish-box p { color: var(--muted); line-height: 1.75; }
+    .wish-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+    .meter { width: 100%; height: 7px; margin-top: 18px; border-radius: 999px; background: rgba(255,255,255,.09); overflow: hidden; opacity: 0; transition: opacity .2s; }
+    .meter.active { opacity: 1; }
+    .meter-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--rose), var(--gold)); transition: width .08s linear; }
+    .status { min-height: 26px; margin-top: 12px; color: var(--gold) !important; }
+
+    .letter-scene {
+      display: grid;
+      grid-template-columns: .8fr 1.2fr;
+      gap: 44px;
+      align-items: center;
+    }
+    .envelope-button {
+      position: relative;
+      width: min(360px, 88vw);
+      aspect-ratio: 1.48;
+      margin: 40px auto 0;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+      perspective: 900px;
+    }
+    .envelope {
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      background: #f7d2d9;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .envelope::before, .envelope::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 0;
+      height: 0;
+      border-bottom: 120px solid #f0b9c6;
+      border-right: 180px solid transparent;
+    }
+    .envelope::after { left: auto; right: 0; border-right: 0; border-left: 180px solid transparent; border-bottom-color: #f8c8d2; }
+    .flap {
+      position: absolute;
+      z-index: 3;
+      inset: 0;
+      transform-origin: top center;
+      transition: .7s cubic-bezier(.2,.8,.2,1);
+    }
+    .flap::before {
+      content: "";
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-left: 180px solid transparent;
+      border-right: 180px solid transparent;
+      border-top: 128px solid #ffdde3;
+    }
+    .seal {
+      position: absolute;
+      z-index: 4;
+      left: 50%;
+      top: 48%;
+      width: 62px;
+      height: 62px;
+      display: grid;
+      place-items: center;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      color: #fff;
+      background: linear-gradient(145deg, #df4e7d, #a92459);
+      box-shadow: 0 8px 18px rgba(104, 20, 57, .28);
+      transition: .45s ease;
+      font-size: 1.5rem;
+    }
+    .envelope-button.open .flap { transform: rotateX(165deg); z-index: 0; }
+    .envelope-button.open .seal { opacity: 0; transform: translate(-50%, -80%) scale(.6); }
+    .envelope-button .open-hint { position: absolute; inset: auto 0 -40px; color: var(--muted); }
+
+    .letter-paper {
+      position: relative;
+      min-height: 420px;
+      padding: clamp(28px, 5vw, 54px);
+      color: #4e2638;
+      border-radius: 4px 26px 26px 4px;
+      background:
+        linear-gradient(90deg, rgba(227, 94, 137, .14) 1px, transparent 1px) 48px 0/1px 100%,
+        repeating-linear-gradient(#fffaf2 0 33px, #ecdde0 34px, #fffaf2 35px);
+      box-shadow: var(--shadow);
+      transform: rotate(.6deg);
+    }
+    .letter-paper::before { content: ""; position: absolute; inset: 14px; border: 1px solid rgba(157, 54, 91, .18); border-radius: 18px; pointer-events: none; }
+    .letter-paper h3 { position: relative; margin: 0 0 22px; color: #9c2f59; font-family: Georgia, "Songti SC", serif; font-size: 1.65rem; }
+    .letter-text { position: relative; min-height: 205px; margin: 0; font-family: Georgia, "Songti SC", serif; font-size: 1.08rem; line-height: 2.05; white-space: pre-line; }
+    .signature { position: relative; text-align: right; color: #9c2f59; font-family: Georgia, "Songti SC", serif; font-size: 1.15rem; opacity: 0; transition: opacity .7s; }
+    .signature.show { opacity: 1; }
+
+    .promise {
+      text-align: center;
+      padding-bottom: 130px;
+    }
+    .promise-card {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(34px, 8vw, 80px) 24px;
+      border: 1px solid rgba(255, 216, 138, .26);
+      border-radius: 36px;
+      background: radial-gradient(circle at 50% 10%, rgba(255,216,138,.14), transparent 38%), rgba(255,255,255,.05);
+      box-shadow: var(--shadow);
+    }
+    .promise-card h2 { max-width: 720px; margin: 0 auto 18px; }
+    .promise-card p { max-width: 610px; margin: 0 auto 28px; color: var(--muted); line-height: 1.8; }
+    .final-message { min-height: 32px; margin-top: 20px; color: var(--gold) !important; font-family: Georgia, "Songti SC", serif; font-size: 1.15rem; }
+    footer { padding: 0 16px 34px; color: rgba(255,255,255,.46); text-align: center; font-size: .82rem; }
+
+    .toast {
+      position: fixed;
+      z-index: 40;
+      left: 50%;
+      bottom: max(24px, env(safe-area-inset-bottom));
+      max-width: calc(100vw - 32px);
+      padding: 12px 18px;
+      color: #3c1727;
+      background: #fff4df;
+      border-radius: 999px;
+      box-shadow: 0 14px 40px rgba(0,0,0,.3);
+      transform: translate(-50%, 30px);
+      opacity: 0;
+      pointer-events: none;
+      transition: .35s ease;
+    }
+    .toast.show { transform: translate(-50%, 0); opacity: 1; }
+
+    @media (max-width: 760px) {
+      .hero { padding-top: 84px; }
+      .cake-panel, .letter-scene { grid-template-columns: 1fr; gap: 26px; }
+      .cake-panel { padding: 28px 18px 34px; }
+      .cake-wrap { min-height: 280px; transform: scale(.9); margin: -16px 0; }
+      .letter-scene { gap: 72px; }
+      .letter-paper { border-radius: 20px; transform: none; }
+      .section { padding: 74px 0; }
+      .sound-toggle .label { display: none; }
+      .sound-toggle { width: 46px; padding: 0; justify-content: center; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+      .heart-rain { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <button class="sound-toggle" id="soundToggle" type="button" aria-pressed="false" aria-label="打开背景音乐">
+    <span class="pulse" aria-hidden="true">♫</span><span class="label">开启音乐</span>
+  </button>
+  <canvas id="fxCanvas" aria-hidden="true"></canvas>
+  <div class="heart-rain" id="heartRain" aria-hidden="true"></div>
+
+  <header class="hero" id="top">
+    <p class="eyebrow">A LITTLE SURPRISE · FOR YOU</p>
+    <h1>亲爱的你，<br>生日快乐。</h1>
+    <p class="hero-copy">今天不只是日历上的一天。是世界把你送到我身边，值得被认真庆祝的一天。</p>
+
+    <div class="gift-stage">
+      <div class="glow"></div>
+      <button class="gift" id="giftButton" type="button" aria-label="点击拆开生日礼物">
+        <span class="bow-right" aria-hidden="true"></span>
+        <span class="gift-label">拆开礼物</span>
+      </button>
+      <article class="reveal-card" id="revealCard" aria-live="polite">
+        <div class="tiny">NO. 01 · 生日限定</div>
+        <h2>一张“永远偏爱你”兑换券</h2>
+        <p>有效期：从今天起，到很久很久以后。<br>使用方式：不开心时抱紧我，开心时也要。</p>
+        <button class="primary" id="continueButton" type="button">收下，继续惊喜</button>
+      </article>
+    </div>
+    <p class="tap-note" id="tapNote">轻轻点一下，今天的惊喜就开始了</p>
+  </header>
+
+  <main>
+    <section class="section" id="wishSection">
+      <div class="section-head">
+        <p class="kicker">第二份惊喜</p>
+        <h2>先许一个愿望</h2>
+        <p class="section-desc">愿望要藏在心里。准备好后，对着屏幕轻轻吹气；也可以点按钮帮你吹灭蜡烛。</p>
+      </div>
+
+      <div class="cake-panel">
+        <div class="cake-wrap" aria-label="点着蜡烛的生日蛋糕">
+          <div class="cake" id="cake">
+            <div class="candles">
+              <div class="candle"><span class="flame"></span><span class="smoke"></span></div>
+              <div class="candle"><span class="flame"></span><span class="smoke"></span></div>
+              <div class="candle"><span class="flame"></span><span class="smoke"></span></div>
+            </div>
+            <div class="cake-base"></div>
+          </div>
+        </div>
+        <div class="wish-box">
+          <h3>闭上眼睛，默念三秒</h3>
+          <p>我不问你的愿望是什么，只负责陪你把它一点一点变成真的。</p>
+          <div class="wish-actions">
+            <button class="primary" id="micButton" type="button">用麦克风吹蜡烛</button>
+            <button class="secondary" id="tapBlowButton" type="button">帮我轻轻吹灭</button>
+          </div>
+          <div class="meter" id="meter" aria-hidden="true"><div class="meter-fill" id="meterFill"></div></div>
+          <p class="status" id="blowStatus" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="letterSection">
+      <div class="section-head">
+        <p class="kicker">第三份惊喜</p>
+        <h2>有些话，想慢慢说给你听</h2>
+      </div>
+
+      <div class="letter-scene">
+        <button class="envelope-button" id="envelopeButton" type="button" aria-label="拆开情书">
+          <span class="envelope" aria-hidden="true"></span>
+          <span class="flap" aria-hidden="true"></span>
+          <span class="seal" aria-hidden="true">♥</span>
+          <span class="open-hint">点一下，拆开这封信</span>
+        </button>
+
+        <article class="letter-paper" aria-live="polite">
+          <h3>致我最特别的女孩：</h3>
+          <p class="letter-text" id="letterText">这封信还藏在信封里……</p>
+          <p class="signature" id="signature">—— 永远站在你这边的人</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section promise" id="finalSection">
+      <div class="promise-card">
+        <p class="kicker">最后一个小愿望</p>
+        <h2>往后的每一个生日，<br>我都想在场。</h2>
+        <p>愿你新的一岁，被喜欢的事填满，被温柔的人珍惜，也一直有做自己的勇气。</p>
+        <button class="primary" id="fireworksButton" type="button">点亮我们的生日烟花</button>
+        <p class="final-message" id="finalMessage" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer>Made with love · 只为今天最重要的你</footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = (selector) => document.querySelector(selector);
+      const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const giftButton = $("#giftButton");
+      const revealCard = $("#revealCard");
+      const tapNote = $("#tapNote");
+      const cake = $("#cake");
+      const micButton = $("#micButton");
+      const blowStatus = $("#blowStatus");
+      const meter = $("#meter");
+      const meterFill = $("#meterFill");
+      const toast = $("#toast");
+      let candlesOut = false;
+      let letterOpened = false;
+      let toastTimer;
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+      }
+
+      function makeHearts(amount = 22) {
+        if (reduceMotion) return;
+        const layer = $("#heartRain");
+        for (let i = 0; i < amount; i++) {
+          const heart = document.createElement("span");
+          heart.className = "falling-heart";
+          heart.textContent = Math.random() > .28 ? "♥" : "♡";
+          heart.style.left = Math.random() * 100 + "vw";
+          heart.style.fontSize = (12 + Math.random() * 18) + "px";
+          heart.style.opacity = (.25 + Math.random() * .55).toFixed(2);
+          heart.style.setProperty("--drift", (-70 + Math.random() * 140) + "px");
+          heart.style.animationDuration = (5 + Math.random() * 5) + "s";
+          heart.style.animationDelay = (Math.random() * 2) + "s";
+          layer.appendChild(heart);
+          heart.addEventListener("animationend", () => heart.remove());
+        }
+      }
+
+      giftButton.addEventListener("click", () => {
+        if (giftButton.classList.contains("open")) return;
+        giftButton.classList.add("open");
+        revealCard.classList.add("show");
+        tapNote.textContent = "第一份心意，已经被你发现啦";
+        makeHearts(28);
+        setTimeout(() => revealCard.querySelector("button").focus({ preventScroll: true }), 1200);
+      });
+
+      $("#continueButton").addEventListener("click", () => {
+        $("#wishSection").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
+      });
+
+      function blowCandles() {
+        if (candlesOut) return;
+        candlesOut = true;
+        cake.classList.add("blown");
+        meter.classList.remove("active");
+        blowStatus.textContent = "愿望已收到，正在悄悄实现中 ✨";
+        showToast("嘘——愿望说出来就不灵啦");
+        makeHearts(18);
+        burst(innerWidth * .5, innerHeight * .38, 54);
+      }
+
+      $("#tapBlowButton").addEventListener("click", blowCandles);
+
+      micButton.addEventListener("click", async () => {
+        if (candlesOut) {
+          showToast("蜡烛已经吹灭，愿望会实现的");
+          return;
+        }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          blowStatus.textContent = "当前浏览器不支持麦克风，请点旁边的按钮吧。";
+          return;
+        }
+        try {
+          blowStatus.textContent = "正在听……靠近一点，轻轻吹气";
+          micButton.disabled = true;
+          meter.classList.add("active");
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          const ctx = new AudioCtx();
+          const source = ctx.createMediaStreamSource(stream);
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = 256;
+          source.connect(analyser);
+          const data = new Uint8Array(analyser.frequencyBinCount);
+          let strongFrames = 0;
+          const started = performance.now();
+
+          function listen() {
+            analyser.getByteFrequencyData(data);
+            const lowMid = data.slice(2, 34);
+            const level = lowMid.reduce((a, b) => a + b, 0) / lowMid.length;
+            meterFill.style.width = Math.min(100, level * 1.5) + "%";
+            strongFrames = level > 34 ? strongFrames + 1 : Math.max(0, strongFrames - 1);
+            if (strongFrames > 5) {
+              stream.getTracks().forEach(track => track.stop());
+              ctx.close();
+              blowCandles();
+              micButton.disabled = false;
+              return;
+            }
+            if (performance.now() - started > 12000) {
+              stream.getTracks().forEach(track => track.stop());
+              ctx.close();
+              micButton.disabled = false;
+              meter.classList.remove("active");
+              blowStatus.textContent = "没有听清，再试一次或点旁边的按钮吧。";
+              return;
+            }
+            requestAnimationFrame(listen);
+          }
+          listen();
+        } catch (error) {
+          micButton.disabled = false;
+          meter.classList.remove("active");
+          blowStatus.textContent = "没关系，不用麦克风也可以。点“帮我轻轻吹灭”吧。";
+        }
+      });
+
+      const letter = `遇见你以后，很多普通的日子都有了值得期待的理由。\n\n喜欢你笑起来的样子，也喜欢你认真做自己的样子。谢谢你把温柔、勇敢和可爱，都带进了我的生活。\n\n新的一岁，希望你不用急着长大，也不用勉强懂事。想笑就笑，想休息就休息。无论晴天还是雨天，我都愿意牵着你的手，陪你慢慢走。`;
+
+      $("#envelopeButton").addEventListener("click", () => {
+        if (letterOpened) return;
+        letterOpened = true;
+        const button = $("#envelopeButton");
+        const target = $("#letterText");
+        button.classList.add("open");
+        button.querySelector(".open-hint").textContent = "这封信，只写给你";
+        target.textContent = "";
+        let index = 0;
+        const step = () => {
+          target.textContent = letter.slice(0, index++);
+          if (index <= letter.length) {
+            setTimeout(step, reduceMotion ? 0 : 24);
+          } else {
+            $("#signature").classList.add("show");
+            makeHearts(14);
+          }
+        };
+        setTimeout(step, reduceMotion ? 0 : 540);
+      });
+
+      // A tiny, self-contained music box made with the Web Audio API.
+      let audioContext = null;
+      let musicTimer = null;
+      let musicOn = false;
+      let noteIndex = 0;
+      const melody = [
+        [261.63, .42], [329.63, .42], [392.00, .42], [523.25, .8],
+        [493.88, .42], [392.00, .42], [440.00, .42], [329.63, .8],
+        [349.23, .42], [440.00, .42], [523.25, .42], [659.25, .8],
+        [587.33, .42], [523.25, .42], [493.88, .42], [392.00, .9]
+      ];
+
+      function playNote(freq, duration) {
+        if (!audioContext) return;
+        const now = audioContext.currentTime;
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(.055, now + .025);
+        gain.gain.exponentialRampToValueAtTime(.0001, now + duration);
+        osc.connect(gain).connect(audioContext.destination);
+        osc.start(now);
+        osc.stop(now + duration + .03);
+      }
+
+      function scheduleMelody() {
+        if (!musicOn) return;
+        const [freq, duration] = melody[noteIndex % melody.length];
+        playNote(freq, duration * .9);
+        noteIndex++;
+        musicTimer = setTimeout(scheduleMelody, duration * 1000);
+      }
+
+      $("#soundToggle").addEventListener("click", async () => {
+        const button = $("#soundToggle");
+        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioContext.state === "suspended") await audioContext.resume();
+        musicOn = !musicOn;
+        button.setAttribute("aria-pressed", String(musicOn));
+        button.setAttribute("aria-label", musicOn ? "关闭背景音乐" : "打开背景音乐");
+        button.querySelector(".label").textContent = musicOn ? "音乐已开" : "开启音乐";
+        button.querySelector(".pulse").textContent = musicOn ? "♪" : "♫";
+        if (musicOn) scheduleMelody();
+        else clearTimeout(musicTimer);
+      });
+
+      const canvas = $("#fxCanvas");
+      const ctx = canvas.getContext("2d");
+      let particles = [];
+      let animationFrame;
+
+      function resizeCanvas() {
+        const dpr = Math.min(devicePixelRatio || 1, 2);
+        canvas.width = innerWidth * dpr;
+        canvas.height = innerHeight * dpr;
+        canvas.style.width = innerWidth + "px";
+        canvas.style.height = innerHeight + "px";
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      resizeCanvas();
+      addEventListener("resize", resizeCanvas, { passive: true });
+
+      const colors = ["#ff6d9e", "#ffd88a", "#ffffff", "#b998ff", "#ff9f7a"];
+
+      function burst(x, y, amount = 70) {
+        if (reduceMotion) return;
+        for (let i = 0; i < amount; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 1.8 + Math.random() * 5.2;
+          particles.push({
+            x, y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 1,
+            decay: .011 + Math.random() * .012,
+            size: 1.3 + Math.random() * 2.7,
+            color: colors[Math.floor(Math.random() * colors.length)]
+          });
+        }
+        if (!animationFrame) animateParticles();
+      }
+
+      function animateParticles() {
+        ctx.clearRect(0, 0, innerWidth, innerHeight);
+        particles = particles.filter(p => p.life > 0);
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += .035;
+          p.vx *= .992;
+          p.life -= p.decay;
+          ctx.globalAlpha = Math.max(0, p.life);
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+        if (particles.length) animationFrame = requestAnimationFrame(animateParticles);
+        else {
+          animationFrame = null;
+          ctx.clearRect(0, 0, innerWidth, innerHeight);
+        }
+      }
+
+      $("#fireworksButton").addEventListener("click", () => {
+        const button = $("#fireworksButton");
+        button.disabled = true;
+        button.textContent = "烟花已经点亮";
+        $("#finalMessage").textContent = "生日快乐。今天、明天，以及未来，都要做最幸福的女孩。";
+        makeHearts(34);
+        const spots = [
+          [.18, .28, 0], [.5, .2, 360], [.82, .3, 720],
+          [.32, .48, 1020], [.68, .46, 1280], [.5, .32, 1660]
+        ];
+        spots.forEach(([x, y, delay]) => setTimeout(() => burst(innerWidth * x, innerHeight * y, 92), delay));
+      });
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden && musicOn) clearTimeout(musicTimer);
+        if (!document.hidden && musicOn) scheduleMelody();
+      });
+    })();
+  </script>
+</body>
+</html>
